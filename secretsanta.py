@@ -6,10 +6,10 @@ from textual.containers import Container, Horizontal, Vertical
 from textual.message import Message, MessageTarget
 from textual.screen import Screen
 from textual.widget import Widget
-from textual.widgets import Button, Header, Input, Label, Static
+from textual.widgets import Button, Footer, Header, Input, Label, Static
 
 
-class PromoFooter(Widget):
+class PromoFooter(Footer):
     """Sticky footer saying the app was built with textual."""
     DEFAULT_CSS = """
     PromoFooter {
@@ -21,27 +21,21 @@ class PromoFooter(Widget):
         background: $accent;
     }
 
-    PromoFooter Label {
-        width: auto;
-        padding: 0 2 0 2;
-    }
-
-    PromoFooter #author {
-        dock: right;
-    }
-
     PromoFooter #promo {
-        dock: left;
+        width: auto;
+        dock: right;
     }
     """
 
     def compose(self) -> ComposeResult:
-        yield Label("[link=https://github.com/textualize/textual]Built with :purple_heart: and Textual[/link]", id="promo")
-        yield Label("[link=https://twitter.com/mathsppblog]by @mathsppblog[/link]", id="author")
+        yield from super().compose()
+        yield Label("Built with :purple_heart: and [link=https://github.com/textualize/textual]Textual[/link] by [link=https://twitter.com/mathsppblog]@mathsppblog[/link]", id="promo")
 
 
 class WelcomeScreen(Screen):
     """A simple welcome screen."""
+
+    BINDINGS = [("s", "start", "Start")]
 
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
@@ -52,7 +46,10 @@ class WelcomeScreen(Screen):
         yield Container(Button("Start"))
         yield PromoFooter()
 
-    def on_button_pressed(self, event: Button.Pressed) -> None:
+    def on_button_pressed(self, _: Button.Pressed) -> None:
+        self.app.pop_screen()
+
+    def action_start(self) -> None:
         self.app.pop_screen()
 
 
@@ -86,7 +83,6 @@ class DrawEntrant(Static):
             self.entrant = to_remove
 
     def __init__(self, label) -> None:
-        print("Going to create a DrawEntrant.")
         super().__init__("")
         self.label = label
 
@@ -121,6 +117,8 @@ class DrawMatch(Static):
 class DrawScreen(Screen):
     """The screen where the user inputs names to enter the draw."""
 
+    BINDINGS = [("g", "generate", "Generate matches")]
+
     class Ready(Message):
         """Message to be emitted when results are ready to be displayed."""
         def __init__(self, sender: MessageTarget, people: list[str]) -> None:
@@ -144,8 +142,18 @@ class DrawScreen(Screen):
         self.query_one("#names").mount(DrawEntrant(event.value))
         self.query_one(Input).value = ""
 
+    async def on_draw_entrant_remove_entrant(self, event: DrawEntrant.RemoveEntrant) -> None:
+        await event.entrant.remove()
+
     async def on_button_pressed(self, _: Button.Pressed) -> None:
         """Handler to generate the secret santa drawing."""
+        await self._generate_matches()
+
+    async def action_generate(self) -> None:
+        """Action method to generate the secret santa drawing."""
+        await self._generate_matches()
+
+    async def _generate_matches(self) -> None:
         all_entrants = self.query_one("#names").query(Label)
         if len(all_entrants) < 2:
             self.app.bell()
@@ -160,12 +168,11 @@ class DrawScreen(Screen):
         self.query_one(Input).value = ""
         self.refresh(layout=True)
 
-    async def on_draw_entrant_remove_entrant(self, event: DrawEntrant.RemoveEntrant) -> None:
-        await event.entrant.remove()
-
 
 class ResultsScreen(Screen):
     """Screen to show the results to the user."""
+
+    BINDINGS = [("r", "reset", "Reset draw")]
 
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
@@ -176,6 +183,9 @@ class ResultsScreen(Screen):
         yield PromoFooter()
 
     async def on_button_pressed(self, _: Button.Pressed) -> None:
+        await self.action_reset()
+
+    async def action_reset(self) -> None:
         self.app.push_screen("draw")
         for match in self.query_one("#matches").query(DrawMatch):
             await match.remove()
@@ -212,7 +222,7 @@ class SecretSanta(App):
     def on_compose(self):
         self.push_screen("results")
         self.push_screen("draw")
-        # self.push_screen("welcome")
+        self.push_screen("welcome")
 
     def on_draw_screen_ready(self, event: DrawScreen.Ready) -> None:
         self.query_one(ResultsScreen).generate_matches(event.people)
