@@ -182,12 +182,12 @@ class ResultsScreen(Screen):
 
     def generate_matches(self, people: list[str]) -> None:
         """Method to generate matches and show them on screen."""
-        self.query_one("#matches").mount(Label("Generating matchings..."))
+        self.query_one("#matches").mount(Label("Generating matches..."))
         asyncio.create_task(self._generate_matches(people))
 
     async def _generate_matches(self, people: list[str]) -> None:
         """Private method that generates non-cyclical matches for the draws."""
-        await asyncio.sleep(0.3)
+        await asyncio.sleep(0.7)
 
         chain = people[:]
         random.shuffle(chain)
