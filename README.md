@@ -3,7 +3,7 @@
 A TUI app to help you draw names for your Secret Santa celebration!
 Here is a short demo:
 
-![](media/demo.mp4)
+![](media/demo.gif)
 
 
 ## The app
