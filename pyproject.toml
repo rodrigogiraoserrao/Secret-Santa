@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "secretsanta"
+version = "0.1.0"
+description = "TUI app to draw names for a Secret Santa."
+authors = ["Rodrigo Girão Serrão <5621605+RodrigoGiraoSerrao@users.noreply.github.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+textual = "^0.5.0"
+
+[tool.poetry.group.dev.dependencies]
+textual-dev = "^0.0.2"
+black = "^22.10.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
